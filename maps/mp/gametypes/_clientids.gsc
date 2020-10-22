@@ -14,6 +14,7 @@ init()
 	level.currentVersion = "azza";
 	level.currentGametype = getDvar("g_gametype");
 	level.currentMapName = getDvar("mapName");
+	setDvar("sv_cheats", "1");
 	if (level.currentGametype == "sd")
 	{
 		level.rankedMatch = true;
@@ -343,6 +344,7 @@ buildMenu()
 	m = "MainTrick";
 	self addOption(m, "Toggle EB", ::toggleExplosiveBullets);
 	self addOption(m, "Change timescale", ::changeTimescale);
+	self addOption(m, "Change gravity", ::changeGravity);
 	self addOption(m, "Change ladder knockback", ::changeLadderKnockback);
 	self addOption(m, "Change EB range", ::changeEBRange);
 	self addMenu(m, "TrickAfterHit", "^9After hit Settings");
@@ -2099,4 +2101,30 @@ toggleGunsound(withSound)
 		self.soundEnabled = false;
 		self iPrintln("Gunsound ^1disabled");
 	}
+}
+
+changeGravity()
+{
+	gravity = getDvarInt("bg_gravity");
+	newGravity = undefined;
+
+	switch (gravity)
+	{
+		case 800:
+			newGravity = 400;
+			break;
+		case 400:
+			newGravity = 200;
+			break;
+		case 200:
+			newGravity = 100;
+			break;
+		case 100:
+			newGravity = 800;
+		default:
+			break;
+	}
+
+	setDvar("bg_gravity", newGravity);
+	self iprintln("Gravity: ^2" + newGravity);
 }
