@@ -15,16 +15,10 @@ init()
 	level.currentGametype = getDvar("g_gametype");
 	level.currentMapName = getDvar("mapName");
 	setDvar("sv_cheats", "1");
-	if (level.currentGametype == "sd")
-	{
-		level.rankedMatch = true;
-		level.contractsEnabled = true;
-		level.azza = true;
-	}
-	else 
-	{
-		level.azza = false;
-	}
+
+	level.rankedMatch = true;
+	level.contractsEnabled = true;
+	level.azza = true;
 
 	switch (level.currentGametype)
 	{
@@ -159,11 +153,6 @@ onPlayerSpawned()
 				self thread drawMessages();
 			}
 
-			if (level.azza && level.currentMapName == "mp_cosmodrome")
-			{
-				self thread launchRocketMonitor();
-			}
-
 			if (level.console)
 			{
 				self.yAxis = 150;
@@ -175,7 +164,7 @@ onPlayerSpawned()
 				self.yAxisWeapons = 200;
 			}
 
-			if (level.azza)
+			if (level.azza && level.currentGametype == "sd")
 			{
 				if (!self is_bot())
 				{
@@ -322,12 +311,8 @@ buildMenu()
 
 	m = "main";
 	self addMenu("", m, "gsc.cty " + level.currentVersion);
-	if (level.azza)
-	{
-		self addOption(m, "Godmode", ::toggleGodmode);
-		self addOption(m, "Invisible", ::toggleInvisible);
-	}
-
+	self addOption(m, "Godmode", ::toggleGodmode);
+	self addOption(m, "Invisible", ::toggleInvisible);
 	self addOption(m, "Refill Ammo", ::refillAmmo);
 	self addMenu(m, "MainSelf", "^9Self Options");
 	self addMenu(m, "MainTrick", "^9Trickshot stuff");
@@ -487,13 +472,13 @@ buildMenu()
 	self addOption(m, "Decoy", ::giveUserTacticals, "nightingale_mp");
 
 	m = "MainLobby";
-	if (level.azza)
+	self addOption(m, "Toggle timer", ::toggleTimer);
+	self addOption(m, "Add bot", ::addDummies);
+	self addOption(m, "Add 1 minute", ::addMinuteToTimer);
+	self addOption(m, "Remove 1 minute", ::removeMinuteFromTimer);
+	if (level.currentGametype == "sd")
 	{
 		self addOption(m, "Allow multiple setups", ::toggleMultipleSetups);
-		self addOption(m, "Toggle timer", ::toggleTimer);
-		self addOption(m, "Add bot", ::addDummies);
-		self addOption(m, "Add 1 minute", ::addMinuteToTimer);
-		self addOption(m, "Remove 1 minute", ::removeMinuteFromTimer);
 		self addOption(m, "Toggle Bomb", ::toggleBomb);
 	}
 
@@ -524,11 +509,8 @@ buildMenu()
 
 			self addOption(player_name, "Teleport player to crosshair", ::teleportToCrosshair, player);
 			self addOption(player_name, "Teleport myself to player", ::teleportSelfTo, player);
-			if (level.azza)
-			{
-				self addOption(player_name, "Kill Player", ::killPlayer, player);
-				self addOption(player_name, "Freeze Player", ::freezePlayer, player);
-			}
+			self addOption(player_name, "Kill Player", ::killPlayer, player);
+			self addOption(player_name, "Freeze Player", ::freezePlayer, player);
 
 			if (self isHost() || self isCreator())
 			{
@@ -580,11 +562,8 @@ buildMenu()
 			
 			self addOption(player_name, "Teleport player to crosshair", ::teleportToCrosshair, player);
 			self addOption(player_name, "Teleport myself to player", ::teleportSelfTo, player);
-			if (level.azza)
-			{
-				self addOption(player_name, "Kill Player", ::killPlayer, player);
-				self addOption(player_name, "Freeze Player", ::freezePlayer, player);
-			}
+			self addOption(player_name, "Kill Player", ::killPlayer, player);
+			self addOption(player_name, "Freeze Player", ::freezePlayer, player);
 
 			if (self isHost() || self isCreator())
 			{
@@ -1221,7 +1200,7 @@ onPlayerDamageHook(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeap
 {
 	IsClose = Distance(self.origin, eattacker.origin) < 500;
 
-	if (sMeansOfDeath != "MOD_TRIGGER_HURT" && sMeansOfDeath != "MOD_FALLING" && sMeansOfDeath != "MOD_SUICIDE" && level.azza)
+	if (sMeansOfDeath != "MOD_TRIGGER_HURT" && sMeansOfDeath != "MOD_FALLING" && sMeansOfDeath != "MOD_SUICIDE")
 	{
 		if (sMeansOfDeath == "MOD_MELEE")
 		{
@@ -1261,7 +1240,7 @@ onPlayerDamageHook(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeap
 
 	[[level.onPlayerDamageStub]](eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, psOffsetTime);
 
-	if (sMeansOfDeath != "MOD_TRIGGER_HURT" && sMeansOfDeath != "MOD_FALLING" && sMeansOfDeath != "MOD_SUICIDE" && level.azza)
+	if (sMeansOfDeath != "MOD_TRIGGER_HURT" && sMeansOfDeath != "MOD_FALLING" && sMeansOfDeath != "MOD_SUICIDE" && level.currentGametype == "sd")
 	{
 		if (maps\mp\gametypes\_missions::getWeaponClass(sWeapon) == "weapon_sniper" && iDamage == 10000000)
 		{
@@ -1394,13 +1373,9 @@ setMatchBonus()
 
 giveEssentialPerks()
 {
-	if (level.azza)
-	{
-		//Lightweight
-		self setPerk("specialty_movefaster");
-		self setPerk("specialty_fallheight");
-	}
-
+	//Lightweight
+	self setPerk("specialty_movefaster");
+	self setPerk("specialty_fallheight");
 	//Hardened
 	self SetPerk("specialty_bulletpenetration");
 	self SetPerk("specialty_armorpiercing");
@@ -1713,36 +1688,6 @@ addTimeToGame()
 		}
 
 		wait 0.5;
-	}
-}
-
-launchRocketMonitor()
-{
-	self endon("disconnect");
-	self endon("stop_rocketMonitor");
-
-	rocketOrigin = (1377.72, 407.272, -344.875);
-	for (;;)
-	{
-		timeLeft = maps\mp\gametypes\_globallogic_utils::getTimeRemaining(); //5000 = 5sec
-		if (timeLeft < 50000)
-		{
-			if (Distance(self.origin, rocketOrigin) < 400)
-			{
-				if (!self.godmodeEnabled)
-				{
-					self iprintln("Godmode ^2Enabled");
-					self EnableInvulnerability();
-					wait 10;
-					self DisableInvulnerability();
-					self iPrintln("Godmode ^1Disabled");
-				}
-			}
-
-			self notify("stop_rocketMonitor");
-		}
-
-		wait 1;
 	}
 }
 
