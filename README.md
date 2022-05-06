@@ -1,2 +1,2 @@
-# gsc.cty_azza
+# Century Azza Package
 Azza menu for cod bo1
